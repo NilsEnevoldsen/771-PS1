@@ -1,0 +1,262 @@
+--------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /Users/nilsschool/Documents/771/771-PS1/log.log
+  log type:  text
+ opened on:  14 Sep 2016, 19:02:22
+
+. 
+. use inpresdata_mod
+
+. 
+. // Drop single datapoint with grossly insufficient data.
+. drop if _n == 149120
+(1 observation deleted)
+
+. 
+. // There should be 152,989 individuals in the sample.
+. assert _N ==  152989
+
+. 
+. // First, define the “young” as those born between 1968 and 1972, who were
+. // exposed to the INPRES school construction program the entire time they were
+. // in primary school (they were 2 to 6 years old in 1974). Define the “old” as
+. // those born between 1957 and 1962, who should have had little or no exposure
+. // to the program (they were 12 to 17 in 1974). For the moment, ignore the “ve
+> ry
+. // old” who were born before 1957.
+. assert !mi(birthyear)
+
+. generate young   = (68 <= birthyear) & (birthyear <= 72)
+
+. generate old     = (57 <= birthyear) & (birthyear <= 62)
+
+. generate veryold = (birthyear < 57)
+
+. 
+. // Next, define “high” program areas as those in which the residual of a
+. // regression of the number of schools on the number of children is positive,
+. // and all other regions as “low” program areas.
+. assert !mi(recp)
+
+. 
+. // 1. Generate a new variable - yeduc_diff - which is the difference in the
+. // average years of education obtained between those born in high and low
+. // program areas.
+. //
+. // Plot this difference on the y axis with cohorts (i.e., birth year) on the
+. // x axis. Add seperate fitted regression lines for the old and young cohorts.
+. // Comment on the plot. How does this pattern fit with the author’s argument?
+. preserve
+
+. collapse yeduc [aweight=weight], by(birthyear young old recp)
+
+. reshape wide yeduc, i(birthyear young old) j(recp)
+(note: j = 0 1)
+
+Data                               long   ->   wide
+-----------------------------------------------------------------------------
+Number of obs.                       46   ->      23
+Number of variables                   5   ->       5
+j variable (2 values)              recp   ->   (dropped)
+xij variables:
+                                  yeduc   ->   yeduc0 yeduc1
+-----------------------------------------------------------------------------
+
+. gen yeduc_diff = yeduc1 - yeduc0
+
+. graph twoway ///
+>     (line yeduc_diff birthyear) ///
+>     (lfit yeduc_diff birthyear if young) ///
+>     (lfit yeduc_diff birthyear if old)
+
+. restore
+
+. 
+. // 2. Calculate the average difference in years of education obtained between
+. // the high and low program areas for the old and the young. Subtract your
+. // measure for the old from your measure for the young. Provide standard error
+> s
+. // for these differences. Repeat the procedure for the log of hourly wages. Wh
+> at
+. // do we call this estimator?
+. preserve
+
+. keep if (young | old) & !mi(lhwage)
+(121,928 observations deleted)
+
+. mean yeduc [aweight=weight], over(recp old)
+
+Mean estimation                   Number of obs   =     31,061
+
+         Over: recp old
+    _subpop_1: 0 0
+    _subpop_2: 0 1
+    _subpop_3: 1 0
+    _subpop_4: 1 1
+
+--------------------------------------------------------------
+        Over |       Mean   Std. Err.     [95% Conf. Interval]
+-------------+------------------------------------------------
+yeduc        |
+   _subpop_1 |   9.760872   .0366733      9.688991    9.832753
+   _subpop_2 |   9.403377   .0424498      9.320174     9.48658
+   _subpop_3 |   8.490131   .0434352      8.404996    8.575266
+   _subpop_4 |   8.017859   .0532057      7.913574    8.122145
+--------------------------------------------------------------
+
+. lincom  (_subpop_3 - _subpop_1) - (_subpop_4 - _subpop_2)
+
+ ( 1)  - [yeduc]_subpop_1 + [yeduc]_subpop_2 + [yeduc]_subpop_3 -
+       [yeduc]_subpop_4 = 0
+
+------------------------------------------------------------------------------
+        Mean |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+         (1) |   .1147767   .0886813     1.29   0.196    -.0590423    .2885957
+------------------------------------------------------------------------------
+
+. mean lhwage [aweight=weight], over(recp old)
+
+Mean estimation                   Number of obs   =     31,061
+
+         Over: recp old
+    _subpop_1: 0 0
+    _subpop_2: 0 1
+    _subpop_3: 1 0
+    _subpop_4: 1 1
+
+--------------------------------------------------------------
+        Over |       Mean   Std. Err.     [95% Conf. Interval]
+-------------+------------------------------------------------
+lhwage       |
+   _subpop_1 |   6.729947   .0064512      6.717303    6.742592
+   _subpop_2 |   7.013077    .007055      6.999249    7.026905
+   _subpop_3 |   6.605257   .0077662      6.590035    6.620479
+   _subpop_4 |   6.872757   .0084468      6.856201    6.889313
+--------------------------------------------------------------
+
+. lincom  (_subpop_3 - _subpop_1) - (_subpop_4 - _subpop_2)
+
+ ( 1)  - [lhwage]_subpop_1 + [lhwage]_subpop_2 + [lhwage]_subpop_3 -
+       [lhwage]_subpop_4 = 0
+
+------------------------------------------------------------------------------
+        Mean |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0156295   .0149349     1.05   0.295    -.0136435    .0449025
+------------------------------------------------------------------------------
+
+. restore
+
+. 
+. // 3. [Discussion question omitted.]
+. 
+. // 4. Now define one more group - the “very old” - born before 1957 (in
+. // practice, because we only have data beginning in 1950, this encompasses
+. // individuals born between 1950 and 1956, who were thus 18 to 24 years old in
+. // 1974). Repeat the above analysis from 3.2 and 3.3, comparing the old and ve
+> ry
+. // old. Why is this exercise useful? What should you see if the identifying
+. // assumptions hold? Comment on your plot.
+. preserve
+
+. collapse yeduc [aweight=weight], by(birthyear old veryold recp)
+
+. reshape wide yeduc, i(birthyear old veryold) j(recp)
+(note: j = 0 1)
+
+Data                               long   ->   wide
+-----------------------------------------------------------------------------
+Number of obs.                       46   ->      23
+Number of variables                   5   ->       5
+j variable (2 values)              recp   ->   (dropped)
+xij variables:
+                                  yeduc   ->   yeduc0 yeduc1
+-----------------------------------------------------------------------------
+
+. gen yeduc_diff = yeduc1 - yeduc0
+
+. graph twoway ///
+>     (line yeduc_diff birthyear) ///
+>     (lfit yeduc_diff birthyear if old) ///
+>     (lfit yeduc_diff birthyear if veryold)
+
+. restore
+
+. 
+. preserve
+
+. keep if (old | veryold) & !mi(lhwage)
+(122,531 observations deleted)
+
+. mean yeduc [aweight=weight], over(recp veryold)
+
+Mean estimation                   Number of obs   =     30,458
+
+         Over: recp veryold
+    _subpop_1: 0 0
+    _subpop_2: 0 1
+    _subpop_3: 1 0
+    _subpop_4: 1 1
+
+--------------------------------------------------------------
+        Over |       Mean   Std. Err.     [95% Conf. Interval]
+-------------+------------------------------------------------
+yeduc        |
+   _subpop_1 |   9.403377   .0424498      9.320174     9.48658
+   _subpop_2 |   9.114273   .0446212      9.026814    9.201732
+   _subpop_3 |   8.017859   .0532057      7.913574    8.122145
+   _subpop_4 |   7.724024    .057689      7.610952    7.837097
+--------------------------------------------------------------
+
+. lincom  (_subpop_3 - _subpop_1) - (_subpop_4 - _subpop_2)
+
+ ( 1)  - [yeduc]_subpop_1 + [yeduc]_subpop_2 + [yeduc]_subpop_3 -
+       [yeduc]_subpop_4 = 0
+
+------------------------------------------------------------------------------
+        Mean |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0047309   .0997592     0.05   0.962    -.1908014    .2002631
+------------------------------------------------------------------------------
+
+. mean lhwage [aweight=weight], over(recp veryold)
+
+Mean estimation                   Number of obs   =     30,458
+
+         Over: recp veryold
+    _subpop_1: 0 0
+    _subpop_2: 0 1
+    _subpop_3: 1 0
+    _subpop_4: 1 1
+
+--------------------------------------------------------------
+        Over |       Mean   Std. Err.     [95% Conf. Interval]
+-------------+------------------------------------------------
+lhwage       |
+   _subpop_1 |   7.013077    .007055      6.999249    7.026905
+   _subpop_2 |   7.074952   .0076986      7.059862    7.090041
+   _subpop_3 |   6.872757   .0084468      6.856201    6.889313
+   _subpop_4 |   6.930232   .0096546      6.911309    6.949156
+--------------------------------------------------------------
+
+. lincom  (_subpop_3 - _subpop_1) - (_subpop_4 - _subpop_2)
+
+ ( 1)  - [lhwage]_subpop_1 + [lhwage]_subpop_2 + [lhwage]_subpop_3 -
+       [lhwage]_subpop_4 = 0
+
+------------------------------------------------------------------------------
+        Mean |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+         (1) |   .0043994   .0165408     0.27   0.790    -.0280214    .0368201
+------------------------------------------------------------------------------
+
+. restore
+
+. 
+. log close
+      name:  <unnamed>
+       log:  /Users/nilsschool/Documents/771/771-PS1/log.log
+  log type:  text
+ closed on:  14 Sep 2016, 19:02:28
+--------------------------------------------------------------------------------

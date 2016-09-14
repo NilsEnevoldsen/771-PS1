@@ -8,11 +8,10 @@ Construction in Indonesia: Evidence from an Unusual Policy Experiment." The
 American Economic Review 91.4 (2001): 795-813.
 */
 
-version 14.1
-
+version 14.2
 clear all
-
 cd ~/Documents/771/771-PS1
+log using log, replace text
 
 use inpresdata_mod
 
@@ -29,34 +28,26 @@ assert _N ==  152989
 // to the program (they were 12 to 17 in 1974). For the moment, ignore the “very
 // old” who were born before 1957.
 assert !mi(birthyear)
-generate young = (68 <= birthyear) & (birthyear <= 72)
-generate old   = (57 <= birthyear) & (birthyear <= 62)
+generate young   = (68 <= birthyear) & (birthyear <= 72)
+generate old     = (57 <= birthyear) & (birthyear <= 62)
+generate veryold = (birthyear < 57)
 
 // Next, define “high” program areas as those in which the residual of a
 // regression of the number of schools on the number of children is positive,
 // and all other regions as “low” program areas.
-//
-// [Note: This program intensity variable is already generated for you in the
-// dataset, and is labeled “recp”.]
 assert !mi(recp)
 
 // 1. Generate a new variable - yeduc_diff - which is the difference in the
 // average years of education obtained between those born in high and low
 // program areas.
 //
-// (Hint: Collapse your data to do this; make sure to limit your sample and
-// weight appropriately).
+// Plot this difference on the y axis with cohorts (i.e., birth year) on the
+// x axis. Add seperate fitted regression lines for the old and young cohorts.
+// Comment on the plot. How does this pattern fit with the author’s argument?
 preserve
 collapse yeduc [aweight=weight], by(birthyear young old recp)
 reshape wide yeduc, i(birthyear young old) j(recp)
 gen yeduc_diff = yeduc1 - yeduc0
-
-// Plot this difference on the y axis with cohorts (i.e., birth year) on the
-// x axis. Add seperate fitted regression lines for the old and young cohorts.
-// Comment on the plot. How does this pattern fit with the author’s argument?
-//
-// (Hint: Use Stata’s “twoway lfit” command to add regression lines to your
-// plot).
 graph twoway ///
     (line yeduc_diff birthyear) ///
     (lfit yeduc_diff birthyear if young) ///
@@ -68,17 +59,12 @@ restore
 // measure for the old from your measure for the young. Provide standard errors
 // for these differences. Repeat the procedure for the log of hourly wages. What
 // do we call this estimator?
-//
-// (Hint: Your results should match those found in Panel A of Table 3. Don’t
-// forget to limit your sample and weight appropriately).
 preserve
 keep if (young | old) & !mi(lhwage)
-*tab old recp [aweight=weight], summ(yeduc)  means standard nofreq noobs
-*tab old recp [aweight=weight], summ(lhwage) means standard nofreq noobs
-qui reg yeduc  i.old##i.recp [aweight=weight]
-margins i.old##i.recp
-qui reg lhwage i.old##i.recp [aweight=weight]
-margins i.old##i.recp
+mean yeduc [aweight=weight], over(recp old)
+lincom  (_subpop_3 - _subpop_1) - (_subpop_4 - _subpop_2)
+mean lhwage [aweight=weight], over(recp old)
+lincom  (_subpop_3 - _subpop_1) - (_subpop_4 - _subpop_2)
 restore
 
 // 3. [Discussion question omitted.]
@@ -89,10 +75,6 @@ restore
 // 1974). Repeat the above analysis from 3.2 and 3.3, comparing the old and very
 // old. Why is this exercise useful? What should you see if the identifying
 // assumptions hold? Comment on your plot.
-//
-// (Hint: Don’t forget to limit your sample and weight appropriately).
-generate veryold = (birthyear < 57)
-
 preserve
 collapse yeduc [aweight=weight], by(birthyear old veryold recp)
 reshape wide yeduc, i(birthyear old veryold) j(recp)
@@ -105,10 +87,10 @@ restore
 
 preserve
 keep if (old | veryold) & !mi(lhwage)
-*tab veryold recp [aweight=weight], summ(yeduc)  means standard nofreq noobs
-*tab veryold recp [aweight=weight], summ(lhwage) means standard nofreq noobs
-qui reg yeduc  i.veryold##i.recp [aweight=weight]
-margins i.veryold##i.recp
-qui reg lhwage i.veryold##i.recp [aweight=weight]
-margins i.veryold##i.recp
+mean yeduc [aweight=weight], over(recp veryold)
+lincom  (_subpop_3 - _subpop_1) - (_subpop_4 - _subpop_2)
+mean lhwage [aweight=weight], over(recp veryold)
+lincom  (_subpop_3 - _subpop_1) - (_subpop_4 - _subpop_2)
 restore
+
+log close
