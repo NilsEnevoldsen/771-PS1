@@ -37,7 +37,7 @@ generate veryold = (birthyear < 57)
 // and all other regions as “low” program areas.
 assert !mi(recp)
 
-// 1. Generate a new variable - yeduc_diff - which is the difference in the
+// 3.1. Generate a new variable - yeduc_diff - which is the difference in the
 // average years of education obtained between those born in high and low
 // program areas.
 //
@@ -54,7 +54,7 @@ graph twoway ///
     (lfit yeduc_diff birthyear if old)
 restore
 
-// 2. Calculate the average difference in years of education obtained between
+// 3.2. Calculate the average difference in years of education obtained between
 // the high and low program areas for the old and the young. Subtract your
 // measure for the old from your measure for the young. Provide standard errors
 // for these differences. Repeat the procedure for the log of hourly wages. What
@@ -67,9 +67,9 @@ mean lhwage [aweight=weight], over(recp old)
 lincom  (_subpop_3 - _subpop_1) - (_subpop_4 - _subpop_2)
 restore
 
-// 3. [Discussion question omitted.]
+// 3.3. [Discussion question omitted.]
 
-// 4. Now define one more group - the “very old” - born before 1957 (in
+// 3.4. Now define one more group - the “very old” - born before 1957 (in
 // practice, because we only have data beginning in 1950, this encompasses
 // individuals born between 1950 and 1956, who were thus 18 to 24 years old in
 // 1974). Repeat the above analysis from 3.2 and 3.3, comparing the old and very
@@ -91,6 +91,42 @@ mean yeduc [aweight=weight], over(recp veryold)
 lincom  (_subpop_3 - _subpop_1) - (_subpop_4 - _subpop_2)
 mean lhwage [aweight=weight], over(recp veryold)
 lincom  (_subpop_3 - _subpop_1) - (_subpop_4 - _subpop_2)
+restore
+
+// 5.2. Aggregate the data by cohort (young and old) and region of birth. Run a
+// regression of (a) education on school construction program intensity and (b)
+// wages on school construction program intensity. Calculate the ratio of (b) to
+// (a). What is this called? Discuss how the results compare to Table 7.
+
+// Alternative approach to replicating Table 7, Panel A1
+preserve
+keep if !mi(lhwage)
+
+local controls1 "i.birthpl i.birthyear i.birthyear#(c.ch71)"
+local controls2 "i.birthpl i.birthyear i.birthyear#(c.ch71 c.en71)"
+local controls3 "i.birthpl i.birthyear i.birthyear#(c.ch71 c.en71 c.wsppc)"
+
+eststo, prefix(ols): qui reg lhwage yeduc `controls1' [aweight=weight]
+eststo, prefix(ols): qui reg lhwage yeduc `controls2' [aweight=weight]
+eststo, prefix(ols): qui reg lhwage yeduc `controls3' [aweight=weight]
+
+eststo, prefix(iv_year): qui ivregress 2sls lhwage ///
+    (yeduc=i.birthyear#i.recp) `controls1' [aweight=weight]
+eststo, prefix(iv_year): qui ivregress 2sls lhwage ///
+    (yeduc=i.birthyear#i.recp) `controls2' [aweight=weight]
+eststo, prefix(iv_year): qui ivregress 2sls lhwage ///
+    (yeduc=i.birthyear#i.recp) `controls3' [aweight=weight]
+
+eststo, prefix(iv_cohort): qui ivregress 2sls lhwage ///
+    (yeduc=i.young#i.recp) `controls1' [aweight=weight]
+eststo, prefix(iv_cohort): qui ivregress 2sls lhwage ///
+    (yeduc=i.young#i.recp) `controls2' [aweight=weight]
+eststo, prefix(iv_cohort): qui ivregress 2sls lhwage ///
+    (yeduc=i.young#i.recp) `controls3' [aweight=weight]
+
+esttab ols*, keep(yeduc)
+esttab iv_year*, keep(yeduc)
+esttab iv_cohort*, keep(yeduc)
 restore
 
 log close

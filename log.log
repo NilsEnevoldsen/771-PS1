@@ -1,8 +1,8 @@
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------
       name:  <unnamed>
        log:  /Users/nilsschool/Documents/771/771-PS1/log.log
   log type:  text
- opened on:  14 Sep 2016, 19:02:22
+ opened on:  18 Sep 2016, 17:00:25
 
 . 
 . use inpresdata_mod
@@ -21,8 +21,7 @@
 . // exposed to the INPRES school construction program the entire time they were
 . // in primary school (they were 2 to 6 years old in 1974). Define the “old” as
 . // those born between 1957 and 1962, who should have had little or no exposure
-. // to the program (they were 12 to 17 in 1974). For the moment, ignore the “ve
-> ry
+. // to the program (they were 12 to 17 in 1974). For the moment, ignore the “very
 . // old” who were born before 1957.
 . assert !mi(birthyear)
 
@@ -39,7 +38,7 @@
 . assert !mi(recp)
 
 . 
-. // 1. Generate a new variable - yeduc_diff - which is the difference in the
+. // 3.1. Generate a new variable - yeduc_diff - which is the difference in the
 . // average years of education obtained between those born in high and low
 . // program areas.
 . //
@@ -72,12 +71,10 @@ xij variables:
 . restore
 
 . 
-. // 2. Calculate the average difference in years of education obtained between
+. // 3.2. Calculate the average difference in years of education obtained between
 . // the high and low program areas for the old and the young. Subtract your
-. // measure for the old from your measure for the young. Provide standard error
-> s
-. // for these differences. Repeat the procedure for the log of hourly wages. Wh
-> at
+. // measure for the old from your measure for the young. Provide standard errors
+. // for these differences. Repeat the procedure for the log of hourly wages. What
 . // do we call this estimator?
 . preserve
 
@@ -106,8 +103,7 @@ yeduc        |
 
 . lincom  (_subpop_3 - _subpop_1) - (_subpop_4 - _subpop_2)
 
- ( 1)  - [yeduc]_subpop_1 + [yeduc]_subpop_2 + [yeduc]_subpop_3 -
-       [yeduc]_subpop_4 = 0
+ ( 1)  - [yeduc]_subpop_1 + [yeduc]_subpop_2 + [yeduc]_subpop_3 - [yeduc]_subpop_4 = 0
 
 ------------------------------------------------------------------------------
         Mean |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
@@ -137,8 +133,7 @@ lhwage       |
 
 . lincom  (_subpop_3 - _subpop_1) - (_subpop_4 - _subpop_2)
 
- ( 1)  - [lhwage]_subpop_1 + [lhwage]_subpop_2 + [lhwage]_subpop_3 -
-       [lhwage]_subpop_4 = 0
+ ( 1)  - [lhwage]_subpop_1 + [lhwage]_subpop_2 + [lhwage]_subpop_3 - [lhwage]_subpop_4 = 0
 
 ------------------------------------------------------------------------------
         Mean |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
@@ -149,13 +144,12 @@ lhwage       |
 . restore
 
 . 
-. // 3. [Discussion question omitted.]
+. // 3.3. [Discussion question omitted.]
 . 
-. // 4. Now define one more group - the “very old” - born before 1957 (in
+. // 3.4. Now define one more group - the “very old” - born before 1957 (in
 . // practice, because we only have data beginning in 1950, this encompasses
 . // individuals born between 1950 and 1956, who were thus 18 to 24 years old in
-. // 1974). Repeat the above analysis from 3.2 and 3.3, comparing the old and ve
-> ry
+. // 1974). Repeat the above analysis from 3.2 and 3.3, comparing the old and very
 . // old. Why is this exercise useful? What should you see if the identifying
 . // assumptions hold? Comment on your plot.
 . preserve
@@ -211,8 +205,7 @@ yeduc        |
 
 . lincom  (_subpop_3 - _subpop_1) - (_subpop_4 - _subpop_2)
 
- ( 1)  - [yeduc]_subpop_1 + [yeduc]_subpop_2 + [yeduc]_subpop_3 -
-       [yeduc]_subpop_4 = 0
+ ( 1)  - [yeduc]_subpop_1 + [yeduc]_subpop_2 + [yeduc]_subpop_3 - [yeduc]_subpop_4 = 0
 
 ------------------------------------------------------------------------------
         Mean |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
@@ -242,8 +235,7 @@ lhwage       |
 
 . lincom  (_subpop_3 - _subpop_1) - (_subpop_4 - _subpop_2)
 
- ( 1)  - [lhwage]_subpop_1 + [lhwage]_subpop_2 + [lhwage]_subpop_3 -
-       [lhwage]_subpop_4 = 0
+ ( 1)  - [lhwage]_subpop_1 + [lhwage]_subpop_2 + [lhwage]_subpop_3 - [lhwage]_subpop_4 = 0
 
 ------------------------------------------------------------------------------
         Mean |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
@@ -254,9 +246,109 @@ lhwage       |
 . restore
 
 . 
+. // 5.2. Aggregate the data by cohort (young and old) and region of birth. Run a
+. // regression of (a) education on school construction program intensity and (b)
+. // wages on school construction program intensity. Calculate the ratio of (b) to
+. // (a). What is this called? Discuss how the results compare to Table 7.
+. 
+. // Alternative approach to replicating Table 7, Panel A1
+. preserve
+
+. keep if !mi(lhwage)
+(92,326 observations deleted)
+
+. 
+. local controls1 "i.birthpl i.birthyear i.birthyear#(c.ch71)"
+
+. local controls2 "i.birthpl i.birthyear i.birthyear#(c.ch71 c.en71)"
+
+. local controls3 "i.birthpl i.birthyear i.birthyear#(c.ch71 c.en71 c.wsppc)"
+
+. 
+. eststo, prefix(ols): qui reg lhwage yeduc `controls1' [aweight=weight]
+(ols1 stored)
+
+. eststo, prefix(ols): qui reg lhwage yeduc `controls2' [aweight=weight]
+(ols2 stored)
+
+. eststo, prefix(ols): qui reg lhwage yeduc `controls3' [aweight=weight]
+(ols3 stored)
+
+. 
+. eststo, prefix(iv_year): qui ivregress 2sls lhwage ///
+>     (yeduc=i.birthyear#i.recp) `controls1' [aweight=weight]
+(iv_year4 stored)
+
+. eststo, prefix(iv_year): qui ivregress 2sls lhwage ///
+>     (yeduc=i.birthyear#i.recp) `controls2' [aweight=weight]
+(iv_year5 stored)
+
+. eststo, prefix(iv_year): qui ivregress 2sls lhwage ///
+>     (yeduc=i.birthyear#i.recp) `controls3' [aweight=weight]
+(iv_year6 stored)
+
+. 
+. eststo, prefix(iv_cohort): qui ivregress 2sls lhwage ///
+>     (yeduc=i.young#i.recp) `controls1' [aweight=weight]
+(iv_cohort7 stored)
+
+. eststo, prefix(iv_cohort): qui ivregress 2sls lhwage ///
+>     (yeduc=i.young#i.recp) `controls2' [aweight=weight]
+(iv_cohort8 stored)
+
+. eststo, prefix(iv_cohort): qui ivregress 2sls lhwage ///
+>     (yeduc=i.young#i.recp) `controls3' [aweight=weight]
+(iv_cohort9 stored)
+
+. 
+. esttab ols*, keep(yeduc)
+
+------------------------------------------------------------
+                      (1)             (2)             (3)   
+                   lhwage          lhwage          lhwage   
+------------------------------------------------------------
+yeduc              0.0768***       0.0767***       0.0761***
+                 (125.00)        (124.81)        (119.04)   
+------------------------------------------------------------
+N                   60663           60466           55144   
+------------------------------------------------------------
+t statistics in parentheses
+* p<0.05, ** p<0.01, *** p<0.001
+
+. esttab iv_year*, keep(yeduc)
+
+------------------------------------------------------------
+                      (1)             (2)             (3)   
+                   lhwage          lhwage          lhwage   
+------------------------------------------------------------
+yeduc               0.112***       0.0854**        0.0800** 
+                   (4.02)          (2.94)          (3.00)   
+------------------------------------------------------------
+N                   60663           60466           55144   
+------------------------------------------------------------
+t statistics in parentheses
+* p<0.05, ** p<0.01, *** p<0.001
+
+. esttab iv_cohort*, keep(yeduc)
+
+------------------------------------------------------------
+                      (1)             (2)             (3)   
+                   lhwage          lhwage          lhwage   
+------------------------------------------------------------
+yeduc               0.334           0.390           0.412   
+                   (1.89)          (0.74)          (0.83)   
+------------------------------------------------------------
+N                   60663           60466           55144   
+------------------------------------------------------------
+t statistics in parentheses
+* p<0.05, ** p<0.01, *** p<0.001
+
+. restore
+
+. 
 . log close
       name:  <unnamed>
        log:  /Users/nilsschool/Documents/771/771-PS1/log.log
   log type:  text
- closed on:  14 Sep 2016, 19:02:28
---------------------------------------------------------------------------------
+ closed on:  18 Sep 2016, 17:02:27
+-------------------------------------------------------------------------------------------
